@@ -12,14 +12,11 @@ spec:
       script: |
         #!/bin/bash
         set -e
-
         echo "***** Environment *****"
         npm --version
         pwd
-
         echo "***** Cleaning npm cache *****"
         npm cache clean --force
-
         echo "***** Running npm install *****"
         npm install
 ---
@@ -37,7 +34,30 @@ spec:
       script: |
         #!/bin/bash
         set -e
-
         echo "***** Running jasminetests *****"
         npx jasmine
-
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: checkout
+spec:
+  params:
+    - name: repo-url
+      type: string
+    - name: branch
+      type: string
+  workspaces:
+    - name: source
+  steps:
+    - name: checkout
+      image: bitnami/git:latest
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/bin/bash
+        set -e
+        echo "Cleaning workspace..."
+        rm -rf *
+        rm -rf .[!.]*
+        echo "Cloning repository..."
+        git clone --branch $(params.branch) $(params.repo-url) .
